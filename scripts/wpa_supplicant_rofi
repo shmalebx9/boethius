@@ -1,0 +1,63 @@
+#!/bin/bash
+
+. ~/.config/athanasius/athanasius.conf
+
+scan() {
+fulllist=$(wpa_cli -i "$INTERFACE" scan >/dev/null; sleep 1; wpa_cli -i "$INTERFACE" scan_results)
+until grep '[0-9]' <<< $fulllist ; do
+	fulllist=$(wpa_cli -i "$INTERFACE" scan >/dev/null; sleep 1; wpa_cli -i "$INTERFACE" scan_results)
+	echo "scanning"
+done
+echo "found networks"
+}
+
+split_select() {
+IFS=" "
+set $SELECT
+	key_mgmnt="$1"
+	SSID="$2"
+}
+
+open_net_connect() {
+	wpa_cli -i "$INTERFACE" set_network 0 key_mgmt NONE
+	wpa_cli -i "$INTERFACE" enable_network "$NETNUMBER"
+}
+
+psk_network_connect() {
+	psk=$(rofi -dmenu -p "Password for $SSID")
+	wpa_cli -i "$INTERFACE" set_network "$NETNUMBER" psk "$psk"
+	wpa_cli -i "$INTERFACE" enable_network "$NETNUMBER"
+}
+
+not_saved() {
+split_select
+echo "SSID is $SSID"
+echo "key_mgmnt is $key_mgmnt"
+NETNUMBER=$(wpa_cli -i $INTERFACE add_network)
+wpa_cli -i $INTERFACE set network $NETNUMBER ssid "$SSID"
+
+if [[ $key_mgmnt == "NONE" ]]; then
+	open_net_connect
+	else
+	psk_network_connect
+fi
+}
+
+scan
+SAVED=$(wpa_cli list_network | sed '1,2d')
+SELECT=$(echo "$fulllist" | awk -F' ' 'NR>2 {gsub("ESS]","NONE"); split($4, arr, "[[-]"); print arr[2] " " $5}' | rofi -dmenu -p "	select network")
+if [[ -z $SELECT ]]; then
+echo "none selected"
+exit 0
+fi
+echo "$SELECT"
+
+if [[ -z $(echo "$SAVED" | grep "$SSID") ]]; then
+	echo "network not saved"
+		not_saved
+		else
+	echo "network saved"
+	NETNUMBER=$(echo "$SAVED" | awk '/'$SSID'/{print $1}')
+	echo "netnumber is $NETNUMBER"
+	wpa_cli -i "$INTERFACE" enable network "$NETNUMBER"
+fi
