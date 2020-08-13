@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 Blkinfo(){
     for partlabel in $@ ; do
@@ -9,12 +9,11 @@ Blkinfo(){
 Mounter(){
     if [[ $3 == *fat* ]] ; then
         if ! mount | grep -q $1 ; then
-            mkdir -p /mnt/$2 && \
-            mount $1 /mnt/$2 && \ 
-            dunstify -i drive-removable-media "$2 successfully mounted" || \
-            notify-send "$2 successfully mounted"
+            mkdir -p -m 766 /mnt/$2 && \
+            mount $1 /mnt/$2
         fi
     fi
+    echo "mounted: $1 at $2"
 }
 
 Listen(){
@@ -22,10 +21,15 @@ while read -r line ; do
     case $line in
     *sdb:*|*sdc:*|*sdd:*|*sde:*)
     fullstring=$(Blkinfo ${line#\[*\: })
-    echo $fullstring
+    echo "connected: $fullstring"
     Mounter $fullstring
     esac
 done
 }
 
-dmesg -W --facility=kern | Listen &
+Run(){
+	dmesg -W --facility=kern | Listen > /tmp/mounter-fifo
+}
+
+mkfifo -m 0004 /tmp/mounter-fifo
+Run
