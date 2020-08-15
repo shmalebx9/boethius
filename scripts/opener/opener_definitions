@@ -1,0 +1,15 @@
+#!/bin/bash
+# by file extension
+open_txt="urxvt -e vim"
+
+#by mimetype
+
+Mimetype_open(){
+    case $1 in
+    text/x-shellscript) code-oss $2 ;;
+    # Make sure to leave this last entry at the bottom
+    *)
+    return 1
+    ;;
+    esac
+}

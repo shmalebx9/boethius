@@ -1,0 +1,14 @@
+#!/bin/bash
+
+. opener_definitions
+
+file="$@"
+
+Open_by_ext(){
+    eval \$open_${file#?*.} $file >/dev/null 2>&1
+}
+
+Open_by_mimetype(){
+    Mimetype_open $(file -L -b --mime-type $file) $file >/dev/null 2>&1
+}
+Open_by_ext || Open_by_mimetype || exo-open $file || xdg-open $file
