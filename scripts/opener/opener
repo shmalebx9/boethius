@@ -11,4 +11,26 @@ Open_by_ext(){
 Open_by_mimetype(){
     Mimetype_open $(file -L -b --mime-type $file) $file >/dev/null 2>&1
 }
-Open_by_ext || Open_by_mimetype || exo-open $file || xdg-open $file
+
+Get_handler_opts(){
+handleropts=$(awk -F '[=;]' '$0~s {$1=""; gsub(".desktop",""); print $0}' s="$(file -L -b --mime-type $file)" /usr/share/applications/mimeinfo.cache)
+}
+
+Query_preferred(){
+Get_handler_opts
+PS3='select program: '
+select opt in $handleropts
+do
+setsid $opt $file >/dev/null 2>&1
+preferred="$opt"
+return 0
+done
+}
+
+Handle_unknown(){
+Query_preferred
+mimetype=$(file -L -b --mime-type $file)
+add_type="\     $mimetype) $preferred \$2 ;;"
+sed -i "/#newmimes/a $add_type" opener_definitions
+}
+Open_by_ext || Open_by_mimetype || Handle_unknown
