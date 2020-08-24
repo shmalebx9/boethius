@@ -2,27 +2,37 @@
 
 Blkinfo(){
     for partlabel in $@ ; do
-    echo "/dev/$partlabel" $(blkid -p -o value -s TYPE -s LABEL "/dev/$partlabel")
-    done
+    label=$(blkid -p -o value -s LABEL)
+        if [[ -n $label ]] ; then
+        echo "/dev/$partlabel" $(blkid -p -o value -s TYPE -s LABEL "/dev/$partlabel")
+        else
+        echo "/dev/$partlabel Generic_Storage_Device" $(blkid -p -o value -s TYPE "/dev/$partlabel")
+        fi
+ done
 }
 
 Mounter(){
     if [[ $3 == *fat* ]] ; then
         if ! mount | grep -q $1 ; then
             mkdir -p -m 766 /mnt/$2 && \
-            mount $1 /mnt/$2
+            mount $1 /mnt/$2 && \
+            echo "mounted: $1 at /mnt/$2"
         fi
     fi
-    echo "mounted: $1 at $2"
 }
 
 Listen(){
 while read -r line ; do
-    case $line in
+    case $line in 
     *sdb:*|*sdc:*|*sdd:*|*sde:*)
+    if [[ -n ${line#\[*\:} ]] ; then
     fullstring=$(Blkinfo ${line#\[*\: })
+    else
+    fullstring=$(Blkinfo ${line:16:3})
+    fi
     echo "connected: $fullstring"
     Mounter $fullstring
+    ;;
     esac
 done
 }
@@ -31,5 +41,7 @@ Run(){
 	dmesg -W --facility=kern | Listen > /tmp/mounter-fifo
 }
 
+if [[ ! -e /tmp/mounter-fifo ]] ; then
 mkfifo -m 0004 /tmp/mounter-fifo
+fi
 Run
