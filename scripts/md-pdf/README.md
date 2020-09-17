@@ -1,5 +1,5 @@
 # Markdown to PDF script
-This script is a wrapper for pandoc and url2cite with a sane default template. PDFs generated with this wrapper will be formatted to the default template provided (Eeisvogel) and citations formatted to the default CSL (Chicago-note).
+This script is a wrapper for pandoc and url2cite with a sane default template. PDFs generated with this wrapper will be formatted to the default template provided (Eeisvogel) with citations formatted to the default CSL (Chicago-note).
 
 # Required tools
 * [url2cite](https://github.com/phiresky/pandoc-url2cite) for citations
