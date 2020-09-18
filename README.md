@@ -16,6 +16,3 @@ The proccess for enabling the mounter script in Void is as follows:
 	cp scripts/mounter /etc/sv/mounter/run
 	chmod +x /etc/sv/mounter/run
 	ln -s /etc/sv/mounter /var/service/
-
-## Markdown to PDF wrapper
-See the README in the mtopdf directory. Add this script to your $PATH **AFTER** bootstrapping.
