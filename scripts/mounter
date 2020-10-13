@@ -15,21 +15,51 @@ Mounter(){
     if [[ $3 == *fat* ]] ; then
         if ! mount | grep -q $1 ; then
             mkdir -p -m 766 /mnt/$2 && \
-            mount $1 /mnt/$2 && \
+            mount $1 /mnt/$2 -o umask=000 && \
             echo "mounted: $1 at /mnt/$2"
         fi
     fi
 }
 
+Unmounter(){
+while read -r line ; do
+    case $line in
+        "u "*)
+        echo "syncing" > /tmp/mounter-fifo
+        sync
+        target=$(awk -F ' ' '{print $2}' <<< $line )
+        umount $target && \
+        echo "unmounted: ${line#* }" > /tmp/mounter-fifo
+        ;;
+        "m "*)
+        Mounter ${line#* }
+        ;;
+    esac
+done
+}
+
 Listen(){
 while read -r line ; do
-    case $line in 
+    case $line in
+    *"device number"*)
+        case $line in
+        *new*)
+        device_number="dv_$(echo $line | grep -Po 'number \K.*(?= using)')"
+        ;;
+        *disconnect,*)
+        device_number="dv_${line##* }"
+        echo "disconnected: ${DEVICES[$device_number]}"
+        unset DEVICES[$device_number]
+        ;;
+        esac
+    ;;
     *sdb:*|*sdc:*|*sdd:*|*sde:*)
     if [[ -n ${line#\[*\:} ]] ; then
     fullstring=$(Blkinfo ${line#\[*\: })
     else
     fullstring=$(Blkinfo ${line:16:3})
     fi
+    DEVICES[$device_number]="$fullstring"
     echo "connected: $fullstring"
     Mounter $fullstring
     ;;
@@ -38,10 +68,16 @@ done
 }
 
 Run(){
+    Unmounter < '/tmp/mounter-fifo-receive' &
 	dmesg -W --facility=kern | Listen > /tmp/mounter-fifo
 }
 
 if [[ ! -e /tmp/mounter-fifo ]] ; then
 mkfifo -m 0004 /tmp/mounter-fifo
 fi
+
+if [[ ! -e /tmp/mounter-fifo-receive ]] ; then
+mkfifo -m 766 /tmp/mounter-fifo-receive
+fi
+
 Run
