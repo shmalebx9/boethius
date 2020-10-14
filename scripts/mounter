@@ -22,9 +22,9 @@ Mounter(){
 }
 
 Unmounter(){
-    echo "Syncing: $3"
+    echo "Syncing: $1 $3"
     sync && \
-    umount $2 && echo "unmounted $@"
+    umount $2 && echo "unmounted: $@"
 }
 
 Listen(){
