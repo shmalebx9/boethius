@@ -64,10 +64,11 @@ done
 
 Run(){
 	dmesg -W --facility=kern > /tmp/mounter-merge &
-    tail -f --retry /tmp/mounter-receive > /tmp/mounter-merge &
-    Listen < /tmp/mounter-merge
+    tail -F /tmp/mounter-receive > /tmp/mounter-merge &
+    Listen < /tmp/mounter-merge > /tmp/mounter-info
 }
 
-(umask=000 ; touch /tmp/mounter-info ; touch /tmp/mounter-receive)
+install -m 777 /dev/null /tmp/mounter-receive
+install -m 777 /dev/null /tmp/mounter-info
 mkfifo -m 766 /tmp/mounter-merge >/dev/null 2>&1
 Run
