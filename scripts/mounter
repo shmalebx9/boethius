@@ -12,30 +12,19 @@ Blkinfo(){
 }
 
 Mounter(){
-    if [[ $3 == *fat* ]] ; then
-        if ! mount | grep -q $1 ; then
-            mkdir -p -m 766 /mnt/$2 && \
-            mount $1 /mnt/$2 -o umask=000 && \
-            echo "mounted: $1 at /mnt/$2"
+    if [[ $4 == *fat* ]] ; then
+        if ! mount | grep -q $2 ; then
+            mkdir -p -m 766 /mnt/$3 && \
+            mount $2 /mnt/$3 -o umask=000 && \
+            echo "mounted: ${DEVICES[$1]} at /mnt/$3"
         fi
     fi
 }
 
 Unmounter(){
-while read -r line ; do
-    case $line in
-        "u "*)
-        echo "syncing" > /tmp/mounter-fifo
-        sync
-        target=$(awk -F ' ' '{print $2}' <<< $line )
-        umount $target && \
-        echo "unmounted: ${line#* }" > /tmp/mounter-fifo
-        ;;
-        "m "*)
-        Mounter ${line#* }
-        ;;
-    esac
-done
+    echo "Syncing: $3"
+    sync && \
+    umount $2 && echo "unmounted $@"
 }
 
 Listen(){
@@ -54,30 +43,31 @@ while read -r line ; do
         esac
     ;;
     *sdb:*|*sdc:*|*sdd:*|*sde:*)
-    if [[ -n ${line#\[*\:} ]] ; then
-    fullstring=$(Blkinfo ${line#\[*\: })
-    else
-    fullstring=$(Blkinfo ${line:16:3})
-    fi
-    DEVICES[$device_number]="$fullstring"
-    echo "connected: $fullstring"
-    Mounter $fullstring
+        if [[ -n ${line#\[*\:} ]] ; then
+          fullstring=$(Blkinfo ${line#\[*\: })
+        else
+          fullstring=$(Blkinfo ${line:16:3})
+        fi
+          DEVICES[$device_number]="$device_number $fullstring"
+          echo "connected: ${DEVICES[$device_number]}"
+          Mounter ${DEVICES[$device_number]}
     ;;
+    "u "*)
+        Unmounter ${DEVICES[${line#* }]}
+        ;;
+    "m "*)
+        Mounter ${DEVICES[${line#* }]}
+        ;;
     esac
 done
 }
 
 Run(){
-    Unmounter < '/tmp/mounter-fifo-receive' &
-	dmesg -W --facility=kern | Listen > /tmp/mounter-fifo
+	dmesg -W --facility=kern > /tmp/mounter-merge &
+    tail -f --retry /tmp/mounter-receive > /tmp/mounter-merge &
+    Listen < /tmp/mounter-merge
 }
 
-if [[ ! -e /tmp/mounter-fifo ]] ; then
-mkfifo -m 0004 /tmp/mounter-fifo
-fi
-
-if [[ ! -e /tmp/mounter-fifo-receive ]] ; then
-mkfifo -m 766 /tmp/mounter-fifo-receive
-fi
-
+(umask=000 ; touch /tmp/mounter-info ; touch /tmp/mounter-receive)
+mkfifo -m 766 /tmp/mounter-merge >/dev/null 2>&1
 Run
