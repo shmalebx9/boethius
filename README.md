@@ -8,7 +8,7 @@ Simply drop the script in your path or run it manually to select your wifi netwo
 This script must be run from the same directory as the 'opener\_definitions' file. The script will open the file provided as an argument with the program defined in 'opener_definitions.' If no program is specified in the definitions file, the script will query the user for the correct program and add it to the definitions file. In order to query the user, the script prompts on the running terminal, so the script will not work if invoked from a gui program on an undefined filetype. Default programs can be specified for mimetypes or file extensions.
 
 ## Mounter 
-The mounter script detects when usb devices or SDcards are inserted into the machine and mounts any fat partition(s) on the device. The script is meant to run as a daemon and requires superuser permissions to mount filesystems. Runit allows bash scripts to be run easily by adding the script to a service directory and enabling it by symlinking it to an active service directory. The directories differ by distribution. 
+The mounter script detects when usb devices or SDcards are inserted into the machine and mounts any fat partition(s) on the device. The script is meant to run as a daemon and requires superuser permissions to mount filesystems. The mounter script outputs information when a device is inserted, mounted, unmounted, and removed. By default, output is written to `tmp/mounter-info`. The output is written to a file rather than a FIFO to allow multiple process to read and close the file.  Runit allows bash scripts to be run easily by adding the script to a service directory and enabling it by symlinking it to an active service directory. The directories differ by distribution. 
 
 The proccess for enabling the mounter script in Void is as follows:
 
@@ -16,3 +16,10 @@ The proccess for enabling the mounter script in Void is as follows:
 	cp scripts/mounter /etc/sv/mounter/run
 	chmod +x /etc/sv/mounter/run
 	ln -s /etc/sv/mounter /var/service/
+
+To unmount/remount send a string with m/u and the device number to /tmp/mounter-receive. Example:
+
+	echo 'u 12' > /tmp/mounter-receive
+	echo 'm 12' > /tmp/mounter-receive
+	
+The mounter script will sync before unmounting to prevent data corruption.
