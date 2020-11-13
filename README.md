@@ -5,7 +5,9 @@ Boethius is a small set of bash utilities I use to get a few features generally 
 Simply drop the script in your path or run it manually to select your wifi network with rofi. This script is built for wpa_supplicant as there are already many dmenu/rofi wifi handlers for NetworkManager and others.
 
 ## Opener
-This script must be run from the same directory as the 'opener\_definitions' file. The script will open the file provided as an argument with the program defined in 'opener_definitions.' If no program is specified in the definitions file, the script will query the user for the correct program and add it to the definitions file. In order to query the user, the script prompts on the running terminal, so the script will not work if invoked from a gui program on an undefined filetype. Default programs can be specified for mimetypes or file extensions.
+The script will open the file provided as an argument with the program defined in 'opener_definitions.' If no program is specified in the definitions file, the script will query the user for the correct program and add it to the definitions file. Default programs can be specified for mimetypes or file extensions.
+
+To use the opener script just clone the repo and run the setup script.
 
 ## Mounter 
 The mounter script detects when usb devices or SDcards are inserted into the machine and mounts any fat partition(s) on the device. The script is meant to run as a daemon and requires superuser permissions to mount filesystems. The mounter script outputs information when a device is inserted, mounted, unmounted, and removed. By default, output is written to `tmp/mounter-info`. The output is written to a file rather than a FIFO to allow multiple process to read and close the file.  Runit allows bash scripts to be run easily by adding the script to a service directory and enabling it by symlinking it to an active service directory. The directories differ by distribution. 
