@@ -1,18 +1,8 @@
-#!/bin/bash
+# Everything before the first space on each line is treated as the file extension
+# or mimetype. Everything after the first space is the command to run the file with
+# that extension/mime.
 
-# by file extension
-#newExtensions
-open_txt="urxvt -e vim"
-
-#by mimetype
-
-Mimetype_open(){
-    case $1 in
-    #newmimes
-     text/x-shellscript) code-oss $2 ;;
-    # Make sure to leave this last entry at the bottom
-    *)
-    return 1
-    ;;
-    esac
-}
+.txt subl3 -n
+.mp4 mpv
+inode/x-empty subl3
+application/pdf zathura
