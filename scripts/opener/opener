@@ -1,6 +1,6 @@
 #!/bin/bash
 IFS="$(printf '%b_' '\n')"; IFS="${IFS%_}"
-file="$@"
+file="'$@'"
 ext=".${*##*.}"
 definitions="$HOME/.local/share/boethius/opener_definitions"
 
@@ -11,7 +11,7 @@ Handle_unknown(){
 	elif [[ "$handler_application" = "custom" ]] ; then
 		handler_application=$(AWMmenu -d -i -p "Open With:")
 	fi
-	echo "$mime $handler_application" >> $definitions &
+	echo -e "\n$mime $handler_application" >> $definitions &
 	eval $handler_application $file
 }
 
@@ -21,6 +21,10 @@ awk -F '=' '$0~s {$1=""; gsub(".desktop",""); gsub(";","\n"); print $0}' s="$mim
 
 Open_file_mime(){
 	mime=$(file -L -b --mime-type $file)
+	echo $mime
+	if [[ "$mime" == cannot* ]] ; then
+		mime="$ext"
+	fi
 	handler_application=$(awk -v term="$mime" '$0 ~ term {$1=""; print $0}' $definitions)
 	if [ ! -z "$handler_application" ] ; then
 		eval $handler_application $file
